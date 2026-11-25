@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WIP Press</title>
+<style>
+/* VOICE: silent bench, no instructions beyond what the objects say
+   IDEA: a steel composing stick with a pica rule, head and knee; sorts and spacers of lead; a proof press
+   PICTURE: the stick at full width, modelled in brushed steel; after printing, the proof alone
+   COLOUR and TYPE: white ground, black ink, steel and lead greys; Albertus on the sorts, WIP Press scans for action words
+   LAYOUT: stick left, a three-compartment case on the right; the proof replaces both; stacks under 760px */
+@font-face{font-family:"Albertus WIP";src:url(fonts/albertus-bold.woff2) format("woff2");font-display:block}
+:root{color-scheme:light;--bg:#fff;--ink:#111;--soft:#8a8a8a;
+ --brush:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='120'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E");
+ --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .3 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;overflow-x:clip}
+main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:clamp(16px,3vw,40px);align-items:start;padding:clamp(20px,4vw,56px) max(4vw,16px)}
+main.printing{grid-template-columns:minmax(0,1fr)}
+main.printing .side{display:none}
+
+/* composing stick */
+.cstick{position:relative;cursor:text;filter:drop-shadow(0 14px 18px rgb(0 0 0/.16)) drop-shadow(0 2px 3px rgb(0 0 0/.18))}
+.plate{position:relative;height:var(--rh,52px);margin-left:var(--hw,22px);border-radius:3px 3px 0 0;
+ background:var(--brush),linear-gradient(#eef0ee,#d4d6d3 70%,#c3c5c2)}
+.plate svg{position:absolute;inset:0;width:100%;height:100%}
+.channel{position:relative;display:flex;align-items:stretch;
+ background:var(--brush),linear-gradient(#b3b5b2,#cfd1ce 22%,#dcdedb 70%,#c6c8c5)}
+.channel::before{content:"";position:absolute;left:0;right:0;top:0;height:10px;background:linear-gradient(rgb(0 0 0/.22),transparent);pointer-events:none}
+.head{flex:none;width:var(--hw,22px);margin-top:calc(-1 * var(--rh,52px));border-radius:3px 0 0 3px;
+ background:var(--brush),linear-gradient(90deg,#c9cbc8,#f1f2f0 35%,#d0d2cf 70%,#a9aba8)}
+.line{flex:1;position:relative;padding:var(--pv,18px) 0 var(--pv,18px) 0;overflow:hidden}
+.stick{display:flex;flex-wrap:nowrap;align-items:stretch;font-family:"Albertus WIP",Georgia,serif;font-weight:700;line-height:1;min-height:1.02em}
+.knee{flex:none;width:34px;position:relative;border-radius:2px;
+ background:var(--brush),linear-gradient(90deg,#9c9e9b,#e2e4e1 30%,#c4c6c3 70%,#8d8f8c)}
+.knee::after{content:"";position:absolute;left:14px;top:18%;bottom:18%;width:5px;border-radius:3px;background:linear-gradient(90deg,#5d5f5c,#8f918e)}
+.lip{height:12px;margin-left:var(--hw,22px);border-radius:0 0 3px 0;background:var(--brush),linear-gradient(#f3f4f2,#c2c4c1 60%,#9fa19e)}
+.tok{height:1.02em;flex:none;display:block;position:relative}
+.ch{line-height:1.02em;color:#151515;user-select:none;text-shadow:0 1px 0 rgb(255 255 255/.25);
+ background:var(--grain),linear-gradient(90deg,#9d9e9a,#b1b2ae 45%,#a3a4a0 85%,#8e8f8b);
+ box-shadow:inset 1px 0 0 rgb(255 255 255/.35),inset -1px 0 0 rgb(0 0 0/.28)}
+.sp,.ghost{
+ background:
+  linear-gradient(to bottom,transparent 64%,rgb(40 40 38/.75) 64%,rgb(40 40 38/.75) 65.6%,rgb(255 255 255/.55) 65.6%,rgb(255 255 255/.55) 66.6%,transparent 66.6%),
+  var(--grain),linear-gradient(90deg,#8f908c,#a1a29e 40%,#94958f 82%,#82837f);
+ box-shadow:inset 1px 0 0 rgb(255 255 255/.3),inset -1px 0 0 rgb(0 0 0/.3),inset 0 6px 8px -4px rgb(0 0 0/.25)}
+.sp{cursor:grab;touch-action:none}
+.sp-S{width:.125em}.sp-M{width:.25em}.sp-L{width:.5em}
+.caret{width:0;flex:none;position:relative}
+.caret::after{content:"";position:absolute;left:-1px;top:.04em;height:.94em;width:2px;background:#111;opacity:0}
+.focus .caret::after{opacity:1;animation:blink 1.05s steps(1) infinite}
+.caret.drop::after{opacity:1;width:5px;left:-2.5px;top:-.1em;height:1.22em;animation:none}
+@keyframes blink{50%{opacity:0}}
+.keys{position:absolute;left:40px;top:12px;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0}
+
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 26px;margin-top:22px}
+.count{margin-right:auto;color:var(--soft);font-size:14px;font-variant-numeric:tabular-nums}
+.count.full{color:var(--ink)}
+.press{all:unset;cursor:pointer;min-height:44px;display:inline-flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:4px;padding:0 4px;color:var(--ink);
+ font:700 20px/1 "Albertus WIP",Georgia,serif;letter-spacing:.06em}
+.press canvas.lbl{display:block;height:var(--h,20px);flex:none;max-width:none}
+.press{flex:none}
+.press.big{--h:clamp(38px,4.6vw,56px)}
+.press{position:relative}
+.press.big{padding-bottom:14px}
+.press canvas.rule{position:absolute;left:4px;bottom:0;width:calc(100% - 8px);height:9px}
+.press:hover{opacity:.72}
+.press:focus-visible,input:focus-visible,.src:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+.press:disabled{opacity:.2;cursor:default}
+
+/* case */
+.sidehead{height:calc(var(--rh,52px) - 6px);display:flex;align-items:flex-end;padding-bottom:12px}
+.sidehead canvas{display:block;height:17px;flex:none;max-width:none}
+.case{display:grid;grid-template-columns:repeat(3,auto);gap:6px;padding:6px;
+ background:var(--brush),linear-gradient(#d9dbd8,#c4c6c3);border-radius:3px;box-shadow:0 10px 18px rgb(0 0 0/.12)}
+.cell{display:flex;align-items:flex-end;justify-content:center;padding:16px 10px 10px;min-width:44px;min-height:170px;border-radius:2px;
+ background:linear-gradient(#e9eae8,#f6f7f5);box-shadow:inset 0 8px 12px -6px rgb(0 0 0/.3),inset 0 -1px 0 rgb(255 255 255/.8)}
+.src{all:unset;cursor:grab;touch-action:none;padding:4px;display:block;line-height:0}
+.src svg{display:block;overflow:visible}
+.src:hover svg{filter:brightness(1.06)}
+.ghost{position:fixed;z-index:9;pointer-events:none;opacity:.94;box-shadow:0 12px 22px rgb(0 0 0/.25)}
+
+/* proof */
+#proof{display:block;width:100%}
+.pull{animation:pull .75s cubic-bezier(.3,.1,.2,1)}
+@keyframes pull{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@media (prefers-reduced-motion:reduce){.pull{animation:none}.focus .caret::after{animation:none}}
+.after{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 28px;margin-top:clamp(20px,3vw,36px)}
+.names{margin-right:auto;width:min(100%,380px);display:block}
+.names input{display:block;width:100%;font:inherit;font-size:17px;min-height:44px;padding:0 2px;border:0;border-bottom:1px solid var(--ink);background:transparent;color:var(--ink);border-radius:0}
+.names input::placeholder{color:#b4b4b4}
+.names small{display:block;margin-top:6px;font-size:13px;color:var(--soft)}
+.saved{min-height:1.4em;margin:8px 0 0;font-size:14px;color:var(--soft)}
+.about{margin:0;padding:0 max(4vw,16px) 28px;max-width:calc(380px + 8vw);font:11pt/1.4 Helvetica,"Helvetica Neue",Arial,sans-serif;color:#111}
+@media (min-width:900px) and (min-height:640px){.about{position:fixed;left:0;bottom:0;padding:0 0 28px max(4vw,16px);max-width:calc(380px + 4vw)}}
+.about b{font-weight:700}
+body.printing .about,body.printing .note{display:none}
+.note{margin:0;padding:0 max(4vw,16px) 24px;font:9px/1.4 Helvetica,"Helvetica Neue",Arial,sans-serif;color:#9a9a9a}
+@media (min-width:900px) and (min-height:640px){.note{position:fixed;right:0;bottom:0;padding:0 max(4vw,16px) 30px 0;text-align:right}}
+@media (max-width:760px){
+ main{grid-template-columns:minmax(0,1fr)}
+ .side{justify-self:start}
+ .sidehead{height:auto;padding:4px 0 12px}
+ .cell{min-height:150px}
+ .knee{width:24px}.knee::after{left:9px}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <defs>
+  <linearGradient id="front" x1="0" x2="1"><stop offset="0" stop-color="#a7a8a4"/><stop offset=".4" stop-color="#9a9b97"/><stop offset=".85" stop-color="#8b8c88"/><stop offset="1" stop-color="#a09f9b"/></linearGradient>
+  <linearGradient id="top" x1="0" x2="1"><stop offset="0" stop-color="#d9dad7"/><stop offset="1" stop-color="#bebfbb"/></linearGradient>
+  <filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".95" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .38 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+ </defs>
+</svg>
+
+<main id="bench">
+ <section id="compose">
+  <div class="cstick" id="cstick">
+   <div class="plate"><svg id="rule" aria-hidden="true"></svg></div>
+   <div class="channel">
+    <div class="head"></div>
+    <div class="line" id="linebox"><div class="stick" id="stick" aria-label="Composing stick"></div></div>
+    <div class="knee"></div>
+   </div>
+   <div class="lip"></div>
+   <input class="keys" id="keys" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Type your word">
+  </div>
+  <div class="bar">
+   <span class="count" id="count"></span>
+   <button class="press" id="clear" type="button" aria-label="Clear" data-w="CLEAR">CLEAR</button>
+   <button class="press big" id="print" type="button" aria-label="Print" data-w="PRINT" disabled>PRINT</button>
+  </div>
+ </section>
+
+ <section id="proofview" hidden>
+  <canvas id="proof" aria-label="Printed proof"></canvas>
+  <div class="after">
+   <label class="names"><input id="names" autocomplete="off" placeholder="e.g. Matthew and Shaheer"><small>Your name and your partner's name</small></label>
+   <button class="press" id="shuffle" type="button" aria-label="Print again" data-w="AGAIN">AGAIN</button>
+   <button class="press" id="save" type="button" aria-label="Save PNG" data-w="SAVE">SAVE</button>
+   <button class="press" id="back" type="button" aria-label="Back" data-w="BACK">BACK</button>
+  </div>
+  <p class="saved" id="saved" aria-live="polite"></p>
+ </section>
+
+ <aside class="side" id="side">
+  <div class="sidehead"><canvas class="lbl" data-w="CHOOSE YOUR SPACING" aria-label="Choose your spacing"></canvas></div>
+  <div class="case" id="case" aria-label="Lead spacers"></div>
+ </aside>
+</main>
+
+<p class="about">WIP Press is a digital composing stick for MA Graphic Communication Design In Progress 2027. Type the <b>keyword</b> you chose with your partner. As in letterpress, the space bar does nothing here: every gap is built from lead spacers dragged in from the case. Print pulls a proof in the WIP Press Black Scan founts, giving each letter one of nine scanned impressions at random. Save the proof as a PNG with both your names.</p>
+
+<p class="note">Typefaces on this site are used for educational purposes only.</p>
+
+<script>
+{
+const SIZE={S:.125,M:.25,L:.5}, MARK={S:.024,M:.078,L:.21}, NAME={S:'small',M:'medium',L:'large'};
+const WEIGHTS=[100,200,300,400,500,600,700,800,900];
+const OK=/^[A-Z.!&-]$/, MAXC=14, MAXRUN=4, TOP=.8, BOT=.22;
+const $=id=>document.getElementById(id);
+const stick=$('stick'), box=$('cstick'), line=$('linebox'), keys=$('keys');
+let toks=[], caret=0, uid=1, dropAt=-1, drag=null;
+
+const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rng=seed=>()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const letters=()=>toks.filter(t=>t.t==='c');
+const word=()=>letters().map(t=>t.ch).join('');
+
+/* spacers in the case, modelled on real lead: grey face with a nick, top and side faces */
+function leadSVG(k){
+ const h=120,w=SIZE[k]*h,d=9,W=w+d,H=h+d,n=k==='L'?2:1;
+ let nicks='';for(let i=0;i<n;i++){const y=d+h*(.64+i*.07);nicks+=`<rect x="0" y="${y}" width="${w}" height="2.2" fill="#2f2f2d" opacity="${i?.45:.8}"/><rect x="0" y="${y+2.2}" width="${w}" height="1.2" fill="#fff" opacity=".55"/>`}
+ return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><polygon points="0,${d} ${d},0 ${W},0 ${w},${d}" fill="url(#top)"/><polygon points="${w},${d} ${W},0 ${W},${h} ${w},${H}" fill="#767773"/><rect x="0" y="${d}" width="${w}" height="${h}" fill="url(#front)"/><rect x="0" y="${d}" width="${w}" height="${h}" fill="#000" filter="url(#grain)" opacity=".9"/>${nicks}<rect x="0" y="${d}" width="1" height="${h}" fill="#fff" opacity=".45"/></svg>`;
+}
+$('case').innerHTML=['S','M','L'].map(k=>`<div class="cell"><button class="src" data-k="${k}" type="button" aria-label="${NAME[k]} spacer">${leadSVG(k)}</button></div>`).join('');
+
+/* pica rule on the back plate */
+function drawRule(){
+ const s=$('rule'),W=s.clientWidth,H=s.clientHeight;if(!W)return;
+ const step=Math.max(6,W/150);let h='';
+ for(let i=1,x=step;x<W-4;i++,x+=step){
+  const big=i%6===0,mid=i%3===0,len=big?H*.34:mid?H*.22:H*.13;
+  h+=`<rect x="${x.toFixed(1)}" y="${(H-len).toFixed(1)}" width="1" height="${len.toFixed(1)}" fill="#2b2b2a" opacity="${big?.85:.6}"/>`;
+  if(big)h+=`<text x="${x.toFixed(1)}" y="${(H*.5).toFixed(1)}" font-size="${Math.min(13,H*.26).toFixed(1)}" font-family="system-ui,sans-serif" text-anchor="middle" fill="#2b2b2a" opacity=".8">${i/2}</text>`;
+ }
+ s.setAttribute('viewBox',`0 0 ${W} ${H}`);s.innerHTML=h;
+}
+
+/* measuring the setting */
+const mc=document.createElement('canvas').getContext('2d'), wcache={};
+function emW(ch){const k=ch;if(!(k in wcache)){mc.font='100px "Albertus WIP"';wcache[k]=mc.measureText(ch).width/100}return wcache[k]}
+const lineEm=()=>toks.reduce((s,t)=>s+(t.t==='c'?emW(t.ch):SIZE[t.k]),0);
+document.fonts.load('40px "Albertus WIP"').then(()=>{for(const k in wcache)delete wcache[k];render()});
+
+/* press type: the scanned glyph images embedded in the WIP Press founts, drawn at their own position and size */
+let META=null;const ATLAS={};
+fetch('type/meta.json').then(r=>r.json()).then(m=>{
+ META=m;
+ WEIGHTS.forEach(w=>{const im=new Image();im.decoding='async';im.onload=()=>{ATLAS[w]=im;if(w===200)labels();$('print').disabled=!Object.keys(ATLAS).length};im.src=`type/wip-${w}.webp`});
+}).catch(()=>{});
+const adv=(w,ch)=>META[w][ch].a/1000;
+function glyph(ctx,w,ch,ox,base,E){
+ const m=META[w][ch],[sx,sy,sw,sh]=m.s,[x,y,gw,gh]=m.r,k=E/1000;
+ ctx.drawImage(ATLAS[w],sx,sy,sw,sh,ox+x*k,base+y*k,gw*k,gh*k);
+}
+function inkText(c,txt,maxW){
+ c.style.height='';c.style.width='';
+ let H=Math.floor(c.getBoundingClientRect().height)||20;c.style.height=H+'px';
+ const dpr=Math.min(2,devicePixelRatio||1),gap=.05,step=ch=>ch===' '?.3:adv(200,ch)+gap;
+ let units=0;for(const ch of txt)units+=step(ch);
+ let E=H*1000/880,W=units*E;
+ if(maxW&&W>maxW){H=Math.floor(H*maxW/W);E=H*1000/880;W=units*E;c.style.height=H+'px'}
+ c.style.width=W+'px';c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);
+ const x=c.getContext('2d');x.setTransform(c.width/W,0,0,c.height/H,0,0);x.imageSmoothingQuality='high';
+ let ox=0;for(const ch of txt){if(ch!==' ')glyph(x,200,ch,ox,E*.86,E);ox+=step(ch)*E}
+}
+function labels(){
+ document.querySelectorAll('.press').forEach(b=>{
+  b.innerHTML='<canvas class="lbl" aria-hidden="true"></canvas>'+(b.id==='print'?'<canvas class="rule" aria-hidden="true"></canvas>':'');
+  inkText(b.querySelector('.lbl'),b.dataset.w);
+ });
+ const h=document.querySelector('.sidehead canvas');inkText(h,h.dataset.w,$('case').getBoundingClientRect().width||undefined);
+ requestAnimationFrame(inkRule);
+}
+
+/* compose */
+function nudge(el){el.animate?.([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:300})}
+function render(){
+ const avail=line.clientWidth-8;
+ const base=Math.min(120,Math.max(48,avail/8)), wem=lineEm();
+ const F=Math.max(24,Math.min(base,wem?avail/(wem+.02):base));
+ stick.style.fontSize=F+'px';
+ box.style.setProperty('--pv',Math.round(F*.16)+'px');
+ box.style.setProperty('--rh',Math.round(Math.max(40,Math.min(64,F*.5)))+'px');
+ $('side').style.setProperty('--rh',box.style.getPropertyValue('--rh'));
+ const at=dropAt>=0?dropAt:caret, cls=dropAt>=0?'caret drop':'caret';
+ let h='';
+ toks.forEach((t,i)=>{
+  if(i===at)h+=`<span class="${cls}"></span>`;
+  h+=t.t==='c'?`<span class="tok ch">${esc(t.ch)}</span>`:`<span class="tok sp sp-${t.k}" data-id="${t.id}"></span>`;
+ });
+ if(at===toks.length)h+=`<span class="${cls}"></span>`;
+ stick.innerHTML=h;
+ const n=letters().length,c=$('count');
+ c.textContent=`${n}/${MAXC} letters`;c.classList.toggle('full',n>=MAXC);
+ drawRule();
+}
+function run(i){let r=0,j=i-1;while(j>=0&&toks[j].t==='s'){r++;j--}j=i;while(j<toks.length&&toks[j].t==='s'){r++;j++}return r}
+function addSpacer(k,i){if(run(i)>=MAXRUN){nudge(box);return false}toks.splice(i,0,{id:uid++,t:'s',k});caret=i+1;return true}
+function typeChar(raw){
+ const ch=raw.toUpperCase();
+ if(ch===' '){nudge($('case'));return}
+ if(ch>='1'&&ch<='3'){addSpacer('SML'[ch-1],caret);render();return}
+ if(!OK.test(ch))return;
+ if(letters().length>=MAXC){nudge($('count'));return}
+ toks.splice(caret,0,{id:uid++,t:'c',ch});caret++;render();
+}
+keys.addEventListener('keydown',e=>{
+ if(e.metaKey||e.ctrlKey||e.altKey)return;
+ const k=e.key;
+ if(k.length===1){e.preventDefault();typeChar(k);return}
+ const act={Backspace:()=>{if(caret>0){toks.splice(caret-1,1);caret--}},Delete:()=>{if(caret<toks.length)toks.splice(caret,1)},
+  ArrowLeft:()=>caret=Math.max(0,caret-1),ArrowRight:()=>caret=Math.min(toks.length,caret+1),Home:()=>caret=0,End:()=>caret=toks.length,Enter:()=>{}}[k];
+ if(act){e.preventDefault();act();render()}
+});
+keys.addEventListener('input',()=>{for(const c of keys.value)typeChar(c);keys.value=''});
+keys.addEventListener('focus',()=>box.classList.add('focus'));
+keys.addEventListener('blur',()=>box.classList.remove('focus'));
+function gapAt(x){let i=0;for(const el of stick.querySelectorAll('.tok')){const r=el.getBoundingClientRect();if(x>r.left+r.width/2)i++}return i}
+box.addEventListener('pointerdown',e=>{
+ const sp=e.target.closest('.sp');
+ if(sp){const t=toks.find(t=>t.id==sp.dataset.id);startDrag(e,t.k,t.id);return}
+ e.preventDefault();caret=toks.length?gapAt(e.clientX):0;render();keys.focus({preventScroll:true});
+});
+
+/* dragging lead */
+function startDrag(e,k,id){drag={k,id,x:e.clientX,y:e.clientY,moved:false,el:null};e.preventDefault()}
+function overStick(x,y){const r=box.getBoundingClientRect();return x>r.left-20&&x<r.right+20&&y>r.top-30&&y<r.bottom+30}
+document.querySelectorAll('.src').forEach(b=>{
+ b.addEventListener('pointerdown',e=>startDrag(e,b.dataset.k,0));
+ b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();addSpacer(b.dataset.k,caret);render()}});
+});
+document.addEventListener('pointermove',e=>{
+ if(!drag)return;
+ if(!drag.moved){
+  if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<5)return;
+  drag.moved=true;
+  if(drag.id){const i=toks.findIndex(t=>t.id===drag.id);toks.splice(i,1);if(caret>i)caret--}
+  const F=parseFloat(stick.style.fontSize)||96;
+  drag.el=Object.assign(document.createElement('div'),{className:'ghost'});
+  Object.assign(drag.el.style,{width:SIZE[drag.k]*F+'px',height:1.02*F+'px'});
+  document.body.append(drag.el);
+ }
+ const g=drag.el;g.style.left=e.clientX-g.offsetWidth/2+'px';g.style.top=e.clientY-g.offsetHeight/2+'px';
+ const nd=overStick(e.clientX,e.clientY)?gapAt(e.clientX):-1;
+ if(nd!==dropAt){dropAt=nd;render()}
+});
+function endDrag(e){
+ if(!drag)return;
+ const d=drag;drag=null;
+ if(!d.moved){
+  if(!d.id)addSpacer(d.k,caret);else caret=toks.findIndex(t=>t.id===d.id)+1;
+  render();keys.focus({preventScroll:true});return;
+ }
+ d.el.remove();const at=dropAt;dropAt=-1;
+ if(at>=0&&e.type==='pointerup')addSpacer(d.k,at);
+ render();keys.focus({preventScroll:true});
+}
+document.addEventListener('pointerup',endDrag);
+document.addEventListener('pointercancel',endDrag);
+$('clear').onclick=()=>{toks=[];caret=0;render();keys.focus()};
+
+/* ink: a rough-edged solid with a few press specks, used for spacers and the rule under PRINT */
+const wave=(v,a,b)=>Math.sin(v*a+b)*.6+Math.sin(v*a*2.7+b*1.3)*.4;
+function rough(ctx,x,y,w,h,unit,amp,dens,seed,ink){
+ const pad=Math.ceil(amp*3)+2,R=rng(seed),oc=document.createElement('canvas');
+ oc.width=Math.ceil(w+pad*2);oc.height=Math.ceil(h+pad*2);
+ const o=oc.getContext('2d'),ph=[R()*6.3,R()*6.3,R()*6.3,R()*6.3],st=Math.max(1.5,unit*.008),p=[];
+ for(let v=0;v<=h;v+=st)p.push([pad+amp*wave(v/unit,9,ph[0]),pad+v]);
+ for(let v=0;v<=w;v+=st)p.push([pad+v,pad+h+amp*.6*wave(v/unit,11,ph[1])]);
+ for(let v=h;v>=0;v-=st)p.push([pad+w+amp*wave(v/unit,8,ph[2]),pad+v]);
+ for(let v=w;v>=0;v-=st)p.push([pad+v,pad+amp*.6*wave(v/unit,10,ph[3])]);
+ o.fillStyle=ink;o.beginPath();p.forEach(([a,b],i)=>i?o.lineTo(a,b):o.moveTo(a,b));o.closePath();o.fill();
+ o.globalCompositeOperation='destination-out';
+ const n=Math.round(w/unit*h/unit*dens);
+ for(let i=0;i<n;i++){o.globalAlpha=.3+R()*.55;o.beginPath();o.arc(pad+R()*w,pad+R()*h,(.0012+R()*.0032)*unit,0,6.3);o.fill()}
+ ctx.drawImage(oc,x-pad,y-pad);
+}
+function inkRule(){
+ const c=document.querySelector('#print canvas.rule');if(!c)return;
+ const w=c.clientWidth,h=c.clientHeight,dpr=Math.min(2,devicePixelRatio||1);if(!w)return;
+ c.width=w*dpr;c.height=h*dpr;const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+ rough(x,1,2,w-2,h-4,260,1.1,700,11,'#111');
+}
+
+/* printing */
+function assign(){const ok=WEIGHTS.filter(w=>ATLAS[w]);for(const t of toks){t.seed=Math.random()*1e9|0;if(t.t==='c')t.w=ok[Math.random()*ok.length|0]}}
+function lay(E){let x=0;const items=[];for(const t of toks){const w=(t.t==='c'?adv(t.w,t.ch):SIZE[t.k])*E;items.push({t,x,w});x+=w}return{items,W:x}}
+function setWord(ctx,E,ox,base,ink){
+ for(const{t,x,w}of lay(E).items){
+  if(t.t==='c')glyph(ctx,t.w,t.ch,ox+x,base,E);
+  else{const mw=MARK[t.k]*E;rough(ctx,ox+x+(w-mw)/2,base-TOP*E,mw,(TOP+BOT)*E,E,{S:.0022,M:.004,L:.006}[t.k]*E,t.k==='S'?90:170,t.seed,ink)}
+ }
+}
+function drawProof(animate){
+ const c=$('proof'),dpr=Math.min(2,devicePixelRatio||1),cw=c.parentElement.clientWidth;
+ const Wem=lay(1).W,E=Math.min(cw*.24,cw*.9/Wem),mg=Math.max(24,E*.32),ch=(TOP+BOT)*E+mg*2;
+ c.width=cw*dpr;c.height=ch*dpr;c.style.height=ch+'px';
+ const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.imageSmoothingQuality='high';x.fillStyle='#fff';x.fillRect(0,0,cw,ch);
+ setWord(x,E,(cw-Wem*E)/2,mg+TOP*E,'#111');
+ if(animate){c.classList.remove('pull');void c.offsetWidth;c.classList.add('pull')}
+}
+function show(print){$('compose').hidden=print;$('proofview').hidden=!print;$('bench').classList.toggle('printing',print);document.body.classList.toggle('printing',print)}
+$('print').onclick=()=>{
+ if(!letters().length){nudge(box);keys.focus();return}
+ if(!Object.keys(ATLAS).length)return;
+ assign();show(true);drawProof(true);$('saved').textContent='';
+};
+$('shuffle').onclick=()=>{assign();drawProof(true);$('saved').textContent=''};
+$('back').onclick=()=>{show(false);render();inkRule();keys.focus({preventScroll:true})};
+
+/* saving */
+let dlP=null;
+const dl=()=>{if(dlP)return dlP;if(window.claude&&window.claude.use)return dlP=window.claude.use('downloads').catch(()=>null);return Promise.resolve(null)};
+setTimeout(dl,0);
+$('save').onclick=async()=>{
+ const Wem=lay(1).W,E=Math.min(1100,3000/Wem),pad=Math.round(E*.12);
+ const c=document.createElement('canvas');c.width=Math.ceil(Wem*E+pad*2);c.height=Math.ceil((TOP+BOT)*E+pad*2);
+ const cx=c.getContext('2d');cx.imageSmoothingQuality='high';setWord(cx,E,pad,pad+TOP*E,'#111');
+ const blob=await new Promise(r=>c.toBlob(r,'image/png'));
+ const who=$('names').value.trim().replace(/[^\p{L}\p{N}]+/gu,'-').replace(/^-|-$/g,'');
+ const filename=`WIP-Press_${word().replace(/[^A-Z]/g,'')||'word'}${who?'_'+who:''}.png`;
+ const api=await dl();
+ if(api){
+  try{await api.save({filename,data:blob});$('saved').textContent='Saved.'}
+  catch(err){$('saved').textContent=err&&err.code==='declined'?'':'Saving is not available here. Open the page in a browser.'}
+ }else{
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);$('saved').textContent='Saved.';
+ }
+};
+
+let rT=0;
+new ResizeObserver(()=>{clearTimeout(rT);rT=setTimeout(()=>{if(ATLAS[200])labels();if($('proofview').hidden){render();inkRule()}else drawProof(false)},60)}).observe(document.body);
+render();
+keys.focus({preventScroll:true});
+}
+</script>
+</body>
+</html>
