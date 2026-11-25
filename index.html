@@ -54,6 +54,7 @@ main.printing .side{display:none}
 .caret.drop::after{opacity:1;width:5px;left:-2.5px;top:-.1em;height:1.22em;animation:none}
 @keyframes blink{50%{opacity:0}}
 .keys{position:absolute;left:40px;top:12px;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0}
+@media (pointer:coarse){.keys{left:0;top:0;width:100%;height:100%;z-index:1;color:transparent;caret-color:transparent;background:transparent;-webkit-tap-highlight-color:transparent}.sp{z-index:2}}
 
 .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 26px;margin-top:22px}
 .count{margin-right:auto;color:var(--soft);font-size:14px;font-variant-numeric:tabular-nums}
@@ -139,7 +140,7 @@ body.printing .about,body.printing .note{display:none}
  <section id="proofview" hidden>
   <canvas id="proof" aria-label="Printed proof"></canvas>
   <div class="after">
-   <label class="names"><input id="names" autocomplete="off" placeholder="e.g. Matthew and Shaheer"><small>Your name and your partner's name</small></label>
+   <label class="names"><input id="names" autocomplete="off"><small>Your name and your partner's name</small></label>
    <button class="press" id="shuffle" type="button" aria-label="Print again" data-w="AGAIN">AGAIN</button>
    <button class="press" id="save" type="button" aria-label="Save PNG" data-w="SAVE">SAVE</button>
    <button class="press" id="back" type="button" aria-label="Back" data-w="BACK">BACK</button>
@@ -254,28 +255,46 @@ function run(i){let r=0,j=i-1;while(j>=0&&toks[j].t==='s'){r++;j--}j=i;while(j<t
 function addSpacer(k,i){if(run(i)>=MAXRUN){nudge(box);return false}toks.splice(i,0,{id:uid++,t:'s',k});caret=i+1;return true}
 function typeChar(raw){
  const ch=raw.toUpperCase();
- if(ch===' '){nudge($('case'));return}
- if(ch>='1'&&ch<='3'){addSpacer('SML'[ch-1],caret);render();return}
- if(!OK.test(ch))return;
- if(letters().length>=MAXC){nudge($('count'));return}
- toks.splice(caret,0,{id:uid++,t:'c',ch});caret++;render();
+ if(ch===' '){nudge($('case'));return 0}
+ if(ch>='1'&&ch<='3'){addSpacer('SML'[ch-1],caret);render();return 1}
+ if(!OK.test(ch))return 0;
+ if(letters().length>=MAXC){nudge($('count'));return 0}
+ toks.splice(caret,0,{id:uid++,t:'c',ch});caret++;render();return 1;
+}
+/* Letters and Backspace arrive through the field's own text, so phone keyboards (which often send no key codes) work too.
+   The field keeps a run of spaces before its caret: deleting one of them, or a letter typed earlier, removes the piece left of the caret. */
+const PAD='        ';
+let prev=PAD,marks=[...PAD].map(()=>1),composing=false;
+function resetKeys(){keys.value=PAD;prev=PAD;marks=[...PAD].map(()=>1);try{keys.setSelectionRange(PAD.length,PAD.length)}catch(e){}}
+function syncKeys(){
+ const v=keys.value;let i=0,j=0;
+ while(i<v.length&&i<prev.length&&v[i]===prev[i])i++;
+ while(j<v.length-i&&j<prev.length-i&&v[v.length-1-j]===prev[prev.length-1-j])j++;
+ const back=marks.slice(i,prev.length-j).reduce((a,b)=>a+b,0);
+ for(let n=0;n<back;n++)if(caret>0){toks.splice(caret-1,1);caret--}
+ const added=[...v.slice(i,v.length-j)].map(typeChar);
+ marks=marks.slice(0,i).concat(added,marks.slice(prev.length-j));
+ prev=v;render();
+ if(!composing)resetKeys();
 }
 keys.addEventListener('keydown',e=>{
- if(e.metaKey||e.ctrlKey||e.altKey)return;
- const k=e.key;
- if(k.length===1){e.preventDefault();typeChar(k);return}
- const act={Backspace:()=>{if(caret>0){toks.splice(caret-1,1);caret--}},Delete:()=>{if(caret<toks.length)toks.splice(caret,1)},
-  ArrowLeft:()=>caret=Math.max(0,caret-1),ArrowRight:()=>caret=Math.min(toks.length,caret+1),Home:()=>caret=0,End:()=>caret=toks.length,Enter:()=>{}}[k];
+ if(e.metaKey||e.ctrlKey||e.altKey||e.isComposing)return;
+ const act={Delete:()=>{if(caret<toks.length)toks.splice(caret,1)},
+  ArrowLeft:()=>caret=Math.max(0,caret-1),ArrowRight:()=>caret=Math.min(toks.length,caret+1),Home:()=>caret=0,End:()=>caret=toks.length,Enter:()=>{}}[e.key];
  if(act){e.preventDefault();act();render()}
 });
-keys.addEventListener('input',()=>{for(const c of keys.value)typeChar(c);keys.value=''});
-keys.addEventListener('focus',()=>box.classList.add('focus'));
+keys.addEventListener('compositionstart',()=>composing=true);
+keys.addEventListener('compositionend',()=>{composing=false;syncKeys()});
+keys.addEventListener('input',syncKeys);
+keys.addEventListener('focus',()=>{resetKeys();box.classList.add('focus')});
 keys.addEventListener('blur',()=>box.classList.remove('focus'));
 function gapAt(x){let i=0;for(const el of stick.querySelectorAll('.tok')){const r=el.getBoundingClientRect();if(x>r.left+r.width/2)i++}return i}
 box.addEventListener('pointerdown',e=>{
  const sp=e.target.closest('.sp');
  if(sp){const t=toks.find(t=>t.id==sp.dataset.id);startDrag(e,t.k,t.id);return}
- e.preventDefault();caret=toks.length?gapAt(e.clientX):0;render();keys.focus({preventScroll:true});
+ caret=toks.length?gapAt(e.clientX):0;render();
+ if(e.target===keys&&e.pointerType!=='mouse')return; /* a tap on the field itself opens the phone keyboard */
+ e.preventDefault();keys.focus({preventScroll:true});
 });
 
 /* dragging lead */
